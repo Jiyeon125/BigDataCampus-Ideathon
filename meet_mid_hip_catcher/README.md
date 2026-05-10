@@ -115,23 +115,129 @@ python src/08_candidate_report_table.py
 python src/09_export_for_ppt.py
 ```
 
-### 6-B. Jupyter Notebook 만 가능한 경우
+### 6-B. 빅데이터 캠퍼스 (Jupyter Notebook 만 가능한 경우) — 처음 사용자용 상세 가이드
 
-`notebooks/` 안에서 다음 순서로 노트북을 연다. **반드시 `00_config.ipynb` 부터** 실행한다.
+#### B-1. 캠퍼스 분석실에서 Jupyter 시작하기
 
-1. `00_config.ipynb` ← **가장 먼저 실행** (`%%writefile` 매직으로 같은 폴더에 `00_config.py` 를 자동 생성)
-2. `01_data_check.ipynb`
-3. `02_b079_consumption_score.ipynb`
-4. `03_b076_mobility_score.ipynb`
-5. `04_b021_local_store_score.ipynb`
-6. `05_b013_accessibility_score.ipynb`
-7. `06_merge_final_score.ipynb`
-8. `07_visualize_results.ipynb`
-9. `08_candidate_report_table.ipynb`
-10. `09_export_for_ppt.ipynb`
+캠퍼스 분석실 PC 에는 보통 **Anaconda Navigator** 가 설치되어 있다. 그게 가장 쉬운 길.
 
-각 노트북은 같은 폴더의 `00_config.py` 를 자동 탐색해 import 한다.
-캠퍼스 환경에서는 `notebooks/` 폴더 통째로 업로드하고 `data/` `outputs/` 폴더만 추가로 만들면 된다.
+**[방법 A] Anaconda Navigator 로 시작 (추천)**
+
+1. 바탕화면 또는 시작 메뉴에서 `Anaconda Navigator` 실행
+2. 화면 가운데 타일 중 **`Jupyter Notebook`** (또는 `JupyterLab`) 의 `Launch` 버튼 클릭
+3. 브라우저(크롬/엣지)에 Jupyter 화면이 열린다 (URL 은 `http://localhost:8888/...` 형태)
+
+**[방법 B] 명령창에서 직접 시작**
+
+윈도우 시작 메뉴에서 `Anaconda Prompt` 를 열고:
+
+```bash
+cd C:\경로\meet_mid_hip_catcher
+jupyter notebook
+```
+
+엔터를 치면 브라우저가 자동으로 열린다.
+
+#### B-2. 프로젝트 폴더 구조 만들기
+
+캠퍼스 PC 에 다음과 같이 파일을 둔다 (어떤 드라이브든 OK).
+
+```
+C:\분석\meet_mid_hip_catcher\         ← 임의의 작업 폴더
+├─ notebooks\                          ← .ipynb 10개 통째로 업로드
+├─ data\
+│  └─ raw\                             ← 원본 데이터(.csv) 여기에
+└─ outputs\                            ← 비어 있어도 됨 (노트북이 자동 생성)
+```
+
+**최소 준비물**
+
+- `notebooks/` 안의 `.ipynb` 10개 (필수)
+- 분석할 원본 데이터를 `data/raw/` 안에 둔다
+- (선택) 행정동코드 ↔ 행정동명 매핑이 있으면 `data/raw/dong_lookup.csv` 로 둔다
+
+#### B-3. 노트북 실행 — 클릭/단축키 하나씩
+
+##### Step 1. 첫 노트북 `00_config.ipynb` 열기
+
+1. Jupyter 화면(파일 브라우저) 에서 `notebooks` 폴더로 이동 (폴더 이름을 클릭)
+2. `00_config.ipynb` 파일 이름을 클릭 → 새 탭에 노트북이 열린다
+
+##### Step 2. 셀 실행 방법
+
+**Jupyter 의 핵심 단축키:**
+
+| 단축키 | 기능 |
+|--------|------|
+| `Shift + Enter` | 현재 셀 실행 + 다음 셀로 이동 (가장 많이 씀) |
+| `Ctrl + Enter` | 현재 셀만 실행 |
+| `Alt + Enter`  | 현재 셀 실행 + 아래에 새 셀 추가 |
+
+마우스로는: 셀을 클릭한 뒤 상단 툴바의 **▶(Run)** 버튼.
+
+##### Step 3. `00_config.ipynb` 안에서 차례대로 실행
+
+`00_config.ipynb` 는 셀이 3개다.
+
+1. 첫 번째 셀(설명) 클릭 → `Shift + Enter`
+2. 두 번째 셀(`%%writefile 00_config.py` 로 시작) → `Shift + Enter`
+   → 같은 폴더에 `00_config.py` 가 만들어진다 (출력에 `Writing 00_config.py` 표시)
+3. 세 번째 셀(import 검증) → `Shift + Enter`
+   → `BASE_DIR=...`, `BANNED_COLUMNS=51 개` 같은 출력이 뜨면 성공
+
+> **또는 한 번에 다 돌리려면**: 상단 메뉴 **`Cell → Run All`** (JupyterLab 은 **`Run → Run All Cells`**) 클릭.
+
+##### Step 4. `01_data_check.ipynb` 열고 실행
+
+1. 브라우저 탭의 Jupyter 파일 브라우저로 돌아가서 `01_data_check.ipynb` 클릭
+2. 메뉴 **`Cell → Run All`** 클릭 (또는 셀별로 `Shift+Enter`)
+3. `data/raw/` 안의 파일을 점검한 결과가 출력에 뜬다
+
+##### Step 5. 02 → 03 → … → 09 까지 같은 방식으로
+
+| 순서 | 노트북 | 결과로 만들어지는 핵심 파일 |
+|------|--------|------------------------------|
+| 1 | `00_config.ipynb` | `notebooks/00_config.py` (헬퍼) |
+| 2 | `01_data_check.ipynb` | `outputs/internal_only/DO_NOT_EXPORT_data_inventory.csv` |
+| 3 | `02_b079_consumption_score.ipynb` | `outputs/export_safe/b079_consumption_score_export_safe.csv` |
+| 4 | `03_b076_mobility_score.ipynb` | `outputs/export_safe/b076_mobility_score_export_safe.csv` |
+| 5 | `04_b021_local_store_score.ipynb` | `outputs/export_safe/b021_local_store_score_export_safe.csv` |
+| 6 | `05_b013_accessibility_score.ipynb` | `outputs/export_safe/b013_accessibility_score_export_safe.csv` |
+| 7 | `06_merge_final_score.ipynb` | `outputs/export_safe/final_meeting_spot_score_export_safe.csv`, `final_top10_export_safe.csv` |
+| 8 | `07_visualize_results.ipynb` | `outputs/export_safe/figures/*.png` (4종) |
+| 9 | `08_candidate_report_table.ipynb` | `outputs/export_safe/candidate_report_table_export_safe.csv` |
+| 10 | `09_export_for_ppt.ipynb` | `outputs/export_safe/ppt_*.csv` (요약표) |
+
+각 노트북은 **마지막 셀까지 실행 → 다음 노트북 열기** 의 반복이다.
+
+> **노트북별 입력 파일 경로를 직접 지정하고 싶다면**: 각 노트북의 함수 정의 셀 맨 위에 있는
+> `B079_FILES = None`, `B076_FILES = None` 같은 변수에 `["실제파일명.csv"]` 식으로 적어 주면 된다.
+> 비워두면 `data/raw` 에서 키워드(`B079`, `SEOUL_SIMIN`, `B076`, `생활이동` …)로 자동 탐색.
+
+#### B-4. 자주 만나는 에러 & 해결
+
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| `00_config.py 를 찾지 못했습니다` | `00_config.ipynb` 를 안 돌렸음 | `00_config.ipynb` 의 두 번째 셀(%%writefile)부터 다시 실행 |
+| `B079 파일을 자동 탐색하지 못했습니다` | `data/raw` 가 비어 있거나 파일명이 키워드와 다름 | 파일을 `data/raw/` 에 두거나, 노트북 상단의 `B079_FILES = ["내파일명.csv"]` 로 직접 지정 |
+| `반출정책 위반 ... 저장 금지 컬럼이 포함` | `save_export_safe()` 의 안전장치가 발동 | 정상 동작이다. 그 컬럼은 빼고 다시 점수만 남겨야 한다는 뜻 |
+| 한글이 그래프에서 깨짐(□□□) | 폰트 미설정 | `cfg.setup_matplotlib_korean()` 이 호출되었는지 확인 (07 노트북 첫 코드 셀) |
+| 커널이 응답 없음 | 데이터가 너무 큼 | 메뉴 `Kernel → Restart` 후 다시 시도, 필요시 `nrows=` 옵션으로 샘플링 |
+
+#### B-5. 결과물 회수
+
+분석이 끝나면 다음 폴더만 살펴보면 된다.
+
+```
+outputs/
+├─ export_safe/      ← 반출 가능 (캠퍼스 외부로 가져갈 수 있는 파일)
+│  ├─ *.csv          ← 점수/순위/등급/비율
+│  └─ figures/*.png  ← 그래프
+└─ internal_only/    ← 반출 금지 (캠퍼스 내부에서만 보고 폐기)
+   └─ DO_NOT_EXPORT_*.csv
+```
+
+캠퍼스 데이터 반출 신청 시에는 **`outputs/export_safe/` 안의 파일만** 신청 목록에 넣는다.
 
 ### 6-C. 공통 사용자 설정
 
