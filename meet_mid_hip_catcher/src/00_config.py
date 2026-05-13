@@ -331,6 +331,92 @@ def list_raw_files(patterns=None):
     return files
 
 
+# 확장자 없이 들어오는 캠퍼스 원본 데이터(예: B079_SEOUL_SIMIN_202401) 도
+# 자동 탐색되도록 한 폴백 버전. list_raw_files() 가 0건이면 이걸로 재시도하면 된다.
+_BINARY_EXT_SKIP = {
+    ".zip", ".7z", ".rar", ".tar", ".gz", ".bz2", ".xz",
+    ".pdf", ".xlsx", ".xls", ".xlsm", ".docx", ".doc", ".pptx", ".ppt", ".hwp", ".hwpx",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg", ".ico",
+    ".mp3", ".mp4", ".avi", ".mov", ".wmv", ".m4a",
+    ".db", ".sqlite", ".parquet", ".feather", ".pkl", ".pickle",
+    ".exe", ".dll", ".so", ".dylib", ".bin",
+}
+_SYSTEM_NAME_SKIP = {".DS_Store", "Thumbs.db", "desktop.ini", ".gitkeep"}
+
+
+def list_raw_files_loose(
+    patterns=None,
+    include_no_extension: bool = True,
+    extra_extensions: list[str] | None = None,
+):
+    """
+    list_raw_files() 의 예비용 폴백.
+
+    - 캠퍼스에서 받은 원본이 확장자 없이 들어오는 경우(예: ``B079_SEOUL_SIMIN_202401``) 대응.
+    - 기본 인식 확장자: ``.csv``, ``.txt``, ``.tsv``, ``.dat`` + (옵션) 확장자 없는 파일.
+    - 명백한 비-텍스트 파일(zip / pdf / xlsx / 이미지 / 동영상 / 바이너리)은 제외.
+    - 시스템 파일(.DS_Store / Thumbs.db / desktop.ini / .gitkeep) 도 제외.
+    - patterns 가 주어지면 부분일치(대소문자 무시) 필터.
+    - extra_extensions 로 추가 확장자 허용(예: ``["psv", "csv.gz"]``).
+
+    실제 파일 내용 파싱은 ``read_table_safely()`` 가 인코딩/구분자를 자동 탐지하므로
+    여기서는 “읽기 후보로 통과시킬지” 만 판단한다.
+    """
+    accepted_ext = {".csv", ".txt", ".tsv", ".dat"}
+    if extra_extensions:
+        for e in extra_extensions:
+            e = str(e).strip().lower()
+            if not e:
+                continue
+            if not e.startswith("."):
+                e = "." + e
+            accepted_ext.add(e)
+
+    candidates = []
+    for p in RAW_DIR.rglob("*"):
+        if not p.is_file():
+            continue
+        if p.name in _SYSTEM_NAME_SKIP:
+            continue
+        suf = p.suffix.lower()
+        if suf in _BINARY_EXT_SKIP:
+            continue
+        if suf in accepted_ext:
+            candidates.append(p)
+            continue
+        if include_no_extension and suf == "":
+            candidates.append(p)
+            continue
+
+    if patterns:
+        out = []
+        for p in candidates:
+            name = p.name.lower()
+            if any(str(pat).lower() in name for pat in patterns):
+                out.append(p)
+        return out
+    return candidates
+
+
+def find_raw_files_auto(patterns=None):
+    """
+    list_raw_files() → 0건이면 자동으로 list_raw_files_loose() 로 폴백.
+
+    02~05 스크립트의 ``resolve_input_files()`` 가 ``list_raw_files`` 대신
+    이걸 호출하도록 바꿔도 동작은 동일하다(엄격 모드가 비면 관대 모드로).
+    """
+    primary = list_raw_files(patterns=patterns)
+    if primary:
+        return primary
+    fallback = list_raw_files_loose(patterns=patterns)
+    if fallback:
+        print(
+            "[list_raw_files] 엄격 탐색 0건 → 확장자 없는 파일 포함 폴백으로 "
+            f"{len(fallback)}건 탐지"
+        )
+    return fallback
+
+
 # =====================================================================
 # 7. 반출 안전성 검사 + 저장
 # =====================================================================
