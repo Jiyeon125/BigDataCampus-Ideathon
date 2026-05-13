@@ -251,6 +251,67 @@ outputs/
 행정동코드 ↔ 행정동명 매핑이 필요하면
 `data/raw/dong_lookup.csv` 에 `행정동코드, 행정동명` 두 컬럼만 있는 CSV 를 두면 된다.
 
+### 6-C-1. 원본 데이터 확장자 처리 (캠퍼스 원본은 보통 확장자가 없음)
+
+캠퍼스에서 신청한 원본 데이터는 `B079_SEOUL_SIMIN_202401` 처럼 애매하게 떨어지는 경우가 많다.
+파일 자체는 텍스트(쉼표/파이프/탭 구분) 라 그대로 사용 가능하지만,
+`data/raw` 의 자동 탐색은 기본적으로 `.csv / .txt / .tsv / .dat` 확장자만 인식한다.
+
+#### 방법 A — 확장자만 일괄로 `.txt` 로 변경 (권장, 가장 빠름)
+
+```text
+data/raw/
+├─ B079_SEOUL_SIMIN_202401          ← 인식 안 됨
+└─ ...
+                ▼ 이름 바꾸기
+├─ B079_SEOUL_SIMIN_202401.txt      ← OK
+└─ ...
+```
+
+→ 인코딩(`utf-8 / utf-8-sig / cp949`) 과 구분자(`,` / `|` / `\t`) 는 코드가 자동 탐지하므로 **내용 변환 불필요**.
+
+#### 방법 B — 각 스크립트의 `XXX_FILES` 에 직접 지정 (이름 못 바꿀 때)
+
+확장자 없는 파일명을 그대로 적어 주면 자동 탐색을 건너뛰고 즉시 로드된다.
+
+```python
+# 예: src/02_b079_consumption_score.py 또는 02 노트북 상단
+B079_FILES = ["B079_SEOUL_SIMIN_202401", "B079_SEOUL_SIMIN_202402"]
+```
+
+02 (B079), 03 (B076), 04 (B021), 05 (B013 버스/지하철) 다섯 군데 모두 동일 패턴.
+
+#### 방법 C — 자동 폴백 탐색기 사용 (확장자 없는 파일 자동 인식)
+
+`00_config.py` 에 예비용 탐색 함수가 들어 있다.
+
+| 함수 | 동작 |
+|------|------|
+| `cfg.list_raw_files(patterns)` | 기본. `.csv / .txt / .tsv / .dat` 만 잡는다. |
+| `cfg.list_raw_files_loose(patterns, include_no_extension=True)` | 확장자 없는 파일도 포함. 명백한 바이너리(zip / pdf / xlsx / 이미지 / 동영상 등)와 시스템 파일(.DS_Store / Thumbs.db / .gitkeep) 은 자동 제외. |
+| `cfg.find_raw_files_auto(patterns)` | 엄격 탐색 0건이면 자동으로 `list_raw_files_loose` 로 폴백. |
+
+각 스크립트/노트북의 `resolve_input_files()` 안에서 호출을 한 줄만 바꾸면 폴백이 켜진다.
+
+```python
+# 변경 전
+files = cfg.list_raw_files(patterns=B079_FILE_PATTERNS)
+# 변경 후 (확장자 없는 파일도 자동 인식)
+files = cfg.find_raw_files_auto(patterns=B079_FILE_PATTERNS)
+```
+
+#### 방법 D — 캠퍼스에서 잡힌 파일 목록 미리 확인
+
+탐색이 의도대로 동작하는지 점검하고 싶을 때, 새 셀에서:
+
+```python
+for p in cfg.list_raw_files_loose():
+    print(p.name, "→", p.suffix or "(확장자 없음)")
+```
+
+> 추가 확장자(예: `.psv`, `.csv.gz`) 가 섞여 있다면 `cfg.list_raw_files_loose(extra_extensions=["psv", "csv.gz"])` 로 허용할 수 있다.
+> 또한 구분자가 세미콜론(`;`) 인 캠퍼스 데이터를 만났다면 `00_config.py` 의 `read_table_safely()` 의 `sep_candidates` 에 `";"` 를 추가해 두면 된다.
+
 ### 6-D. 노트북 재생성 (선택)
 
 `src/*.py` 를 수정한 뒤 노트북에 반영하고 싶다면:
